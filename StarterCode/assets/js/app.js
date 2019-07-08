@@ -1,448 +1,145 @@
 // // @TODO: YOUR CODE HERE!
-// var svgWidth = 960;
-// var svgHeight = 960;
 
-// var chartMargin = {
-//     top: 30,
-//     right: 30,
-//     bottom: 30,
-//     left: 30
-//   };
+var svgWidth = 760;
+var svgHeight = 500;
 
-// var chartWidth = svgWidth - chartMargin.left - chartMargin.right;
-// var chartHeight = svgHeight - chartMargin.top - chartMargin.bottom;
+var margin = {
+  top: 20,
+  right: 40,
+  bottom: 60,
+  left: 100
+};
 
-// var svg = d3.select("#scatter")
-//             .append("svg")
-//             .attr("width",svgWidth)
-//             .attr("height",svgHeight)
-//             // .attr("class","chart");
+var width = svgWidth - margin.left - margin.right;
+var height = svgHeight - margin.top - margin.bottom;
 
-// //set text part
-// svg.append("g")
-//   .attr("class","xText");
-
-// var xText = d3.select(".xText");
-
-// svg.append("g")
-//   .attr("class","yText");
-
-// var yText = d3.select(".yText");
-
-// xText.append("text")
-//      .attr("y", -19)
-//      .attr("data-name", "poverty")
-//      .attr("data-axis", "x")
-//      .attr("class", "aText actative x")
-//      .attr("text", "In Poverty (%)");
-
-// xText.append("text")
-//      .attr("y", 0)
-//      .attr("data-name", "age")
-//      .attr("data-axis", "x")
-//      .attr("class", "aText inactative x")
-//      .attr("text", "Age (Median)")
-
-// xText.append("text")
-//      .attr("y", 19)
-//      .attr("data-name", "income")
-//      .attr("data-axis", "x")
-//      .attr("class", "aText inactative x")
-//      .attr("text", "Household Income (Median)")
-
-// yText.append("text")
-//      .attr("y", -22)
-//      .attr("data-name", "obesity")
-//      .attr("data-axis", "y")
-//      .attr("class", "aText actative y")
-//      .attr("text", "Obses (%)")
-
-// yText.append("text")
-//      .attr("y", 0)
-//      .attr("data-name", "smokes")
-//      .attr("data-axis", "y")
-//      .attr("class", "aText actative y")
-//      .attr("text", "Smokes (%)")
-
-// yText.append("text")
-//      .attr("y", 22)
-//      .attr("data-name", "healthcare")
-//      .attr("data-axis", "y")
-//      .attr("class", "aText actative y")
-//      .attr("text", "Lacks Healthcare (%)")
-
-// var cRadius;
-//      function adjustRadius() {
-//        if (width <= 530) {
-//          cRadius = 7;}
-//        else { 
-//          cRadius = 10;}
-//      }
-// adjustRadius();
-
-
-// d3.csv("assets/data/data.csv", function(error, ourdata) {
-//     if (error) return console.warn(error);
-//     console.log(ourdata);
-
-//     ourdata.foreach(function(data){
-//         data.healthcare = +data.healthcare
-//     })
-
-// chartGroup.selectAll(".scatter")
-//     .data(ourdata)
-//     .enter()
-//     .classed("scatter",true)
-//     .attr("width",)
-//     .attr("height",)
-//     .attr("x",)
-//     .attr("y",)
-// })
-
-
-// Define SVG attributes
-var width = parseInt(d3.select('#scatter')
-    .style("width"));
-
-var height = width * 2/3;
-var margin = 20;
-var labelArea = 110;
-var padding = 45;
-
-// Create SVG object 
+// Create an SVG wrapper, append an SVG group that will hold our chart, and shift the latter by left and top margins.
 var svg = d3.select("#scatter")
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("class", "chart");
+  .append("svg")
+  .attr("width", svgWidth)
+  .attr("height", svgHeight);
 
-// Labels for axes=================================
-// Add first g - tag for x axis text (css class)
-svg.append("g").attr("class", "xText");
-var xText = d3.select(".xText");
+var chartGroup = svg.append("g")
+  .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-// Transform to adjust for xText
-var bottomTextX =  (width - labelArea)/2 + labelArea;
-var bottomTextY = height - margin - padding;
-xText.attr("transform",`translate(
-    ${bottomTextX}, 
-    ${bottomTextY})`
-    );
+// Import Data
+d3.csv("assets/data/data.csv")
+  .then(function(data) {
 
-// x-axis (bottom) ______________________________
-// Build xText details (css class)
-xText.append("text")
-    .attr("y", -19)
-    .attr("data-name", "poverty")
-    .attr("data-axis", "x")
-    .attr("class","aText active x")
-    .text("In Poverty (%)");
+    // Step 1: Parse Data/Cast as numbers
+    // ==============================
+    data.forEach(function(data) {
+      data.poverty = +data.poverty;
+      data.obesity = +data.obesity;
+      data.smokes = +data.smokes;
+      data.age = +data.age;
+      data.income = +data.income;
+      data.healthcare = +data.healthcare;
+      //console.log(data.smokes);
+      //console.log(data.age);
+      
+      //console.log("data.age");
+    });
 
-xText.append("text")
-    .attr("y", 0)
-    .attr("data-name", "age")
-    .attr("data-axis", "x")
-    .attr("class","aText inactive x")
-    .text("Age (Median)");
+    // Step 2: Create scale functions
+    // ==============================
+    var xLinearScale = d3.scaleLinear()
+      //.domain([0, d3.max(data, d => d.smokes)])
+      //.domain([8.3,30])
+      .domain([29.3, 45])
+      .range([0, width],2);
 
-xText.append("text")
-    .attr("y", 19)
-    .attr("data-name", "income")
-    .attr("data-axis", "x")
-    .attr("class","aText inactive x")
-    .text("Household Income (Median)");
+    var yLinearScale = d3.scaleLinear()
+      //.domain([0, d3.max(data, d => d.age)])
+      //.domain([24.3, 45])
+      .domain([8.3,30])
+      .range([height, 0],2);
 
-// y-axis (left)___________________________________
-// Second g tag for yText (css class)
-svg.append("g").attr("class", "yText");
-var yText = d3.select(".yText");
+    // Step 3: Create axis functions
+    // ==============================
+    var bottomAxis = d3.axisBottom(xLinearScale);
+    var leftAxis = d3.axisLeft(yLinearScale);
 
-// Transform to adjust for yText
-var leftTextX =  margin + padding;
-var leftTextY = (height + labelArea) / 2 - labelArea;
-yText.attr("transform",`translate(
-    ${leftTextX}, 
-     ${leftTextY}
-    )rotate(-90)`
-    );
+    // Step 4: Append Axes to the chart
+    // ==============================
+    chartGroup.append("g")
+      .attr("transform", `translate(0, ${height})`)
+      .call(bottomAxis);
 
-// y-axis (left) ______________________________
-// Build yText details (css class)
-yText .append("text")
-    .attr("y", -22)
-    .attr("data-name", "obesity")
-    .attr("data-axis", "y")
-    .attr("class", "aText active y")
-    .text("Obese (%)");
+    chartGroup.append("g")
+      .call(leftAxis);
 
-yText .append("text")
-    .attr("y", 0)
-    .attr("data-name", "smokes")
-    .attr("data-axis", "y")
-    .attr("class", "aText inactive y")
-    .text("Smokes (%)");
+    // Step 5: Create Circles
+    // ==============================
 
-yText .append("text")
-    .attr("y", 22)
-    .attr("data-name", "healthcare")
-    .attr("data-axis", "y")
-    .attr("class", "aText inactive y")
-    .text("Lacks Healthcare (%)");
-    
-// Visualize data  _______________________________________  
-// Define dynamic circle radius
-var cRadius;
-function adjustRadius() {
-  if (width <= 530) {
-    cRadius = 7;}
-  else { 
-    cRadius = 10;}
-}
-adjustRadius();
+    //wrapped your circles and texts inside a <g>
+    //=============================================
 
-// Read in data as promise... and then... newer d3.js method
-d3.csv("assets/data/data.csv",function(error, data) {
-    if (error) return console.warn(error);
-    visualize(data);
-});
+    var circlesGroup = chartGroup.selectAll("g.dot")
+    .data(data)
+    .enter()
+    .append("g");
 
-function visualize (csvData) {
-   var xMin;
-   var xMax;
-   var yMin;
-   var yMax;
+    //circles
+    //===========
 
-   // Current X & Y default selections
-   var currentX = "poverty";
-   var currentY = "obesity";
+    circlesGroup.append("circle")
+    .attr("class", "dot")
+    .attr("cx", d => xLinearScale(d.age))
+    .attr("cy", d => yLinearScale(d.smokes))
+    .attr("r", "15")
+    .attr("fill", "lightblue");
+    // .append("text").text(function(d) { return d.state;})
+    // .attr("opacity", ".5");
+    //.attr("class", "circleText");
 
-   // Tool Tip info box (state, X stats,  Y stats)
-   var toolTip = d3.tip()
-      .attr("class", "d3-tip")
-      .offset([40, -60])
+    //Adding state name inside the circles
+    //=======================================
+    circlesGroup.append("text").text(function(d){
+      return d.abbr;
+    })
+    .attr("x",d => xLinearScale(d.age))
+    .attr("y", d => yLinearScale(d.smokes))
+    .attr("text-anchor", "middle")
+    .attr('fill', 'white')
+    .attr('font-size', 10);
+    // Step 6: Initialize tool tip
+    // ==============================
+    var toolTip = d3.tip()
+      .attr("class", "tooltip")
+      .offset([80, -60])
       .html(function(d) {
-            //Build text box
-            var stateLine = `<div>${d.state}</div>`;
-            var yLine = `<div>${currentY}: ${d[currentY]}%</div>`;
-            if (currentX === "poverty") {
-                xLine = `<div>${currentX}: ${d[currentX]}%</div>`}          
-            else {
-                xLine = `<div>${currentX}: ${parseFloat(d[currentX]).toLocaleString("en")}</div>`;}             
-            return stateLine + xLine + yLine  
-        });
+        //var state = d.abbr;
+        return (`${d.state}<br>Smokes: ${d.smokes}<br>Age: ${d.age}`);
+      });
 
-    // Add toolTip to svg
-    svg.call(toolTip);
+    // Step 7: Create tooltip in the chart
+    // ==============================
+    chartGroup.call(toolTip);
 
-    // Update upon axis option clicked
-    function  labelUpdate(axis, clickText) {
-        // Switch active to inactive
-        d3.selectAll(".aText")
-            .filter("." + axis)
-            .filter(".active")
-            .classed("active", false)
-            .classed("inactive", true);
+    // Step 8: Create event listeners to display and hide the tooltip
+    // ==============================
+    circlesGroup.on("mouseover", function(data) {
+      toolTip.show(data, this);
+    })
+      // onmouseout event
+      .on("mouseout", function(data, index) {
+        toolTip.hide(data);
+      });
     
-        // switch the text just clicked to active
-        clickText.classed("inactive", false).classed("active", true);
-        }
+    // Create axes labels
+    chartGroup.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left + 40)
+      .attr("x", 0 - (height / 2))
+      .attr("dy", "5px")
+      .attr("class", "axisText")
+      .style("text-anchor", "middle")
+      .text("Smokes(%)");
 
-    // Find the data max & min values for scaling
-    function xMinMax() {
-      xMin = d3.min(csvData, function(d) {
-        return parseFloat(d[currentX]) * 0.85;
-      });
-      xMax = d3.max(csvData, function(d) {
-        return parseFloat(d[currentX]) * 1.15;
-      });     
-    }
-
-    function yMinMax() {
-      yMin = d3.min(csvData, function(d) {
-        return parseFloat(d[currentY]) * 0.85;
-      });
-      yMax = d3.max(csvData, function(d) {
-        return parseFloat(d[currentY]) * 1.15;
-      }); 
-    }
-
-    // Scatter plot X & Y axis computation
-    xMinMax();
-    yMinMax();
-
-    var xScale = d3 
-        .scaleLinear()
-        .domain([xMin, xMax])
-        .range([margin + labelArea, width - margin])
-
-    var yScale = d3
-        .scaleLinear()
-        .domain([yMin, yMax])
-        .range([height - margin - labelArea, margin])
-
-    // Create scaled X and Y axis
-    var xAxis = d3.axisBottom(xScale);
-    var yAxis = d3.axisLeft(yScale);
-
-    // Calculate X and Y tick counts
-    function tickCount() {
-      if (width <= 500) {
-         xAxis.ticks(5);
-         yAxis.ticks(5);
-      }
-      else {
-          xAxis.ticks(10);
-          yAxis.ticks(10);
-      }        
-    }
-    tickCount();
-
-    // append axis to the svg as group elements
-    svg.append("g")
-        .call(xAxis)
-        .attr("class", "xAxis")
-        .attr("transform", `translate(
-            0, 
-            ${height - margin - labelArea})`
-        );
-
-    svg.append("g")
-        .call(yAxis)
-        .attr("class", "xAxis")
-        .attr("transform", `translate(
-            ${margin + labelArea}, 
-            0 )`
-        );
-
-    // Append the circles for each row of data
-    var allCircles = svg.selectAll("g allCircles").data(csvData).enter();
-
-    allCircles.append("circle")
-        .attr("cx", function(d) {
-            // xScale figures the pixels
-            return xScale(d[currentX]);
-        })
-        .attr("cy", function(d) {
-            return yScale(d[currentY]);
-        })
-        .attr("r", cRadius)
-        .attr("class", function(d) {
-            return "stateCircle " + d.abbr;
-        })
-        .on("mouseover", function(d) {
-            // Show tooltip when mouse is on circle
-            toolTip.show(d, this);
-            // Highlight circle border
-            d3.select(this).style("stroke", "#323232");
-        })
-        .on("mouseout", function (d) {
-            // Remove the tooltip
-            toolTip.hide(d);
-            // Remove the highlight
-            d3.select(this).style("stroke", "#e3e3e3")
-        });
-
-        // Apply state text on circles (dx & dy are locations)
-        allCircles
-            .append("text")
-            .attr("font-size", cRadius)
-            .attr("class", "stateText")
-
-            .attr("dx", function(d) {
-               return xScale(d[currentX]);
-            })
-            .attr("dy", function(d) {
-              // Push text to center by a 1/3
-              return yScale(d[currentY]) + cRadius /3;
-            })
-            .text(function(d) {
-                return d.abbr;
-              })
-
-            .on("mouseover", function(d) {
-                toolTip.show(d);
-                d3.select("." + d.abbr).style("stroke", "#323232");
-            })
-
-            .on("mouseout", function(d) {
-                toolTip.hide(d);
-                d3.select("." + d.abbr).style("stroke", "#e3e3e3");
-            });
-
-          // Dynamic graph on click
-          d3.selectAll(".aText").on("click", function() {
-              var self = d3.select(this)
-
-              // Select inactive
-              if (self.classed("inactive")) {
-                // Obtain name and axis saved in the label
-                var axis = self.attr("data-axis")
-                var name = self.attr("data-name")
-
-                if (axis === "x") {
-                  currentX = name;
-
-                  // Update min and max of domain (x)
-                  xMinMax();
-                  xScale.domain([xMin, xMax]);
-
-                  svg.select(".xAxis")
-                        .transition().duration(800)
-                        .call(xAxis);
-                  
-                  // Update location of the circles
-                  d3.selectAll("circle").each(function() {
-                    d3.select(this)
-                        .transition().duration(800)
-                        .attr("cx", function(d) {
-                            return xScale(d[currentX])                
-                        });
-                  });   
-
-                  d3.selectAll(".stateText").each(function() {
-                    d3.select(this)
-                        .transition().duration(800)
-                        .attr("dx", function(d) {
-                            return xScale(d[currentX])                          
-                        });
-                  });          
-                  // Update
-                  labelUpdate(axis, self);
-                }
-
-                 // Update for Y axis selection 
-                else {
-                  currentY = name;
-
-                  // Update min and max of range (y)
-                  yMinMax();
-                  yScale.domain([yMin, yMax]);
-
-                  svg.select(".yAxis")
-                        .transition().duration(800)
-                        .call(yAxis);
-
-                  // Update location of the circles
-                  d3.selectAll("circle").each(function() {
-                    d3.select(this)
-                        .transition().duration(800)
-                        .attr("cy", function(d) {
-                            return yScale(d[currentY])                
-                        });                       
-                  });   
-
-                  d3.selectAll(".stateText").each(function() {
-                      d3.select(this)
-                        .transition().duration(800)
-                        .attr("dy", function(d) {
-                           // Center text
-                            return yScale(d[currentY]) + cRadius/3;                          
-                        });
-                  });
-
-                  // change the classes of to active and the clicked label
-                  labelUpdate(axis, self);
-                }
-              }
-          });
-}
+    chartGroup.append("text")
+      .attr("transform", `translate(${width / 2}, ${height + margin.top + 30})`)
+      .attr("class", "axisText")
+      .style("text-anchor", "middle")
+      .text("Age(Median)");
+  });
